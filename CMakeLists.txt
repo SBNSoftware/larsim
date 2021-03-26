@@ -6,9 +6,7 @@
 #  buildtool [-I /install/path] -bt[i] -jN
 # ======================================================================
 
-
-# use cmake 3.14 or later
-cmake_minimum_required (VERSION 3.12...3.14 FATAL_ERROR)
+cmake_minimum_required (VERSION 3.12...3.18 FATAL_ERROR)
 
 project(larsim LANGUAGES CXX)
 
@@ -45,7 +43,6 @@ find_ups_product( nurandom )
 find_ups_product( nusimdata )
 find_ups_product( art )
 find_ups_product(art_root_io)
-find_ups_product( cetbuildtools )
 find_ups_geant4( geant4 )
 find_ups_product( postgresql )
 find_ups_product( ifdhc )
@@ -184,6 +181,9 @@ add_subdirectory(larsim)
 
 # tests
 add_subdirectory(test)
+
+# example
+add_subdirectory(example)
 
 # ups - table and config files
 add_subdirectory(ups)
