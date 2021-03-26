@@ -1,0 +1,74 @@
+<?xml version="1.0"?>
+
+<!-- Production Project -->
+
+<!DOCTYPE project [
+<!ENTITY release "v08_00_00_41">
+<!ENTITY qual "e17:prof">
+<!ENTITY file_type "mc">
+<!ENTITY run_type "physics">
+<!ENTITY name "fluxreader">
+<!ENTITY tag "mcc9_flux">
+<!ENTITY user "zarko">
+
+<!ENTITY scratch_dir "/pnfs/uboone/scratch/users/&user;">
+<!ENTITY persistent_dir "/pnfs/uboone/persistent/users/&user;">
+<!ENTITY resilient_dir "/pnfs/uboone/resilient/users/&user;">
+<!ENTITY storage_dir "/pnfs/uboone/scratch/users/&user;">
+<!-- Job directories definition -->
+<!ENTITY out_dir "&storage_dir;/&name;/&release;/out">
+<!ENTITY log_dir "&storage_dir;/&name;/&release;/log">
+<!ENTITY work_dir "&resilient_dir;/work/&name;/&release;">
+<!ENTITY book_dir "&storage_dir;/book/&name;/&release;">
+]>
+
+<job>
+
+<project name="&name;">
+
+  <!-- Project size -->
+  <numevents>1000000</numevents>
+
+  <!-- Operating System -->
+  <os>SL6</os>
+
+  <!-- Batch resources -->
+  <resource>DEDICATED,OPPORTUNISTIC</resource>
+  
+  <!-- Project Version -->
+  <version>&tag;_v08_00_00_41</version>
+
+  <!-- Larsoft information -->
+  <larsoft>
+    <tag>&release;</tag>
+    <qual>&qual;</qual>
+    <local>&scratch_dir;/fluxreader/fluxreader.tar</local>
+  </larsoft>
+  
+  <!-- Project stages -->
+
+  <stage name="flux">
+    <!-- <inputdef>uboone_bnb_gsimple_fluxes_01_09_2019_463</inputdef> -->
+    <inputlist>&scratch_dir;/fluxreader/file.list</inputlist> 
+    <fcl>fluxreader_evwgh.fcl</fcl>
+    <outdir>&out_dir;</outdir>
+    <logdir>&log_dir;</logdir>
+    <workdir>&work_dir;</workdir>
+    <bookdir>&book_dir;</bookdir>
+    <output>fluxreader_%tc.root</output>
+    <maxfilesperjob>1</maxfilesperjob>
+    <numjobs>4997</numjobs>
+    <memory>4000</memory>
+    <jobsub>--expected-lifetime=8h</jobsub>
+  </stage>  
+  
+  <!-- file type -->
+  <filetype>&file_type;</filetype>
+
+  <!-- run type -->
+  <runtype>&run_type;</runtype>
+
+</project>
+
+</job>
+

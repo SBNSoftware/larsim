@@ -14,3 +14,6 @@ add_subdirectory(GDMLUtils)
 add_subdirectory(EventWeight)
 add_subdirectory(MergeSimSources)
 add_subdirectory(Utils)
+add_subdirectory(FluxReader)
+add_subdirectory(GeoKT)
+
