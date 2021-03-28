@@ -13,6 +13,7 @@ namespace fluxr {
     virtual const float          GetPOT()                         = 0;
     virtual const Long64_t       GetEntries()                     = 0;
     virtual const int            GetRun()                         = 0;
+    virtual const void           SetRun(int)                      = 0;
 
     virtual const TLorentzVector GetNuPosition()                  = 0;
     virtual const TLorentzVector GetNuMomentum()                  = 0;

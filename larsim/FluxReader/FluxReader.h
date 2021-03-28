@@ -45,6 +45,8 @@ namespace fluxr {
     std::string                   fInputType; //fhicl parameter.  Maximum number of events.
     float                         fPOT;
     float                         fCurrentPOT;
+    bool                          _self_increment_runs;
+    art::RunNumber_t              _increment = 1;
 
     FluxInterface*                fFluxDriver;
     TFile*                        fFluxInputFile; 

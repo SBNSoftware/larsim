@@ -24,6 +24,7 @@ namespace fluxr {
       
       const Long64_t GetEntries()                    {return fNEntries;};
       const int      GetRun()                        {return fRun;};
+      const void     SetRun(int run)                 {fRun = run;};
       const float    GetPOT()                        {return fPOT;};
       const TLorentzVector GetNuPosition()           {return fNuPos;};
       const TLorentzVector GetNuMomentum()           {return fNuMom;};

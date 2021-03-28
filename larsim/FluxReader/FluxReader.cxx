@@ -48,6 +48,8 @@ namespace fluxr {
     fSourceHelper(pm),
     fSubRunID(),
     fInputType(ps.get<std::string>("inputType")),
+    _self_increment_runs(ps.get<bool>("SelfIncrementRun")),
+    _increment(1),
     fTLmctruth{helper.reconstitutes<std::vector<simb::MCTruth>, art::InEvent>("flux")},
     fTLmcflux{helper.reconstitutes<std::vector<simb::MCFlux>, art::InEvent>("flux")},
     fTLdk2nu{fInputType=="dk2nu" ? helper.reconstitutes<std::vector<bsim::Dk2Nu>, art::InEvent>("flux"):fTLmctruth},
@@ -128,6 +130,7 @@ namespace fluxr {
   void FluxReader::readFile(std::string const &name,
 			    art::FileBlock* &fb)
   {
+    std::cout << "readFile " << name << std::endl;
     // Fill and return a new Fileblock.
     fb = new art::FileBlock(art::FileFormatVersion(1, "FluxReader"), name);
     
@@ -152,6 +155,11 @@ namespace fluxr {
     std::cout<<"Run = "<<fFluxDriver->GetRun()<<std::endl;
     fPOT+=fFluxDriver->GetPOT();
     fCurrentPOT =fFluxDriver->GetPOT();
+
+    if (_self_increment_runs) {
+      _increment ++;
+      fFluxDriver->SetRun(fFluxDriver->GetRun() + _increment);
+    }
   }
   
   

@@ -22,14 +22,15 @@ services:
 
 source:
 {
-  fileNames:       []
-  module_type:	   FluxReader
-  skipEvents:      0
-  maxEvents:       -1
-  inputType:       "gsimple"
-  nBins:           200
-  Elow:            0
-  Ehigh:           10
+  fileNames:        []
+  module_type:	    FluxReader
+  skipEvents:       0
+  maxEvents:        -1
+  inputType:        "gsimple"
+  nBins:            200
+  Elow:             0
+  Ehigh:            10
+  SelfIncrementRun: true
 }
 
 outputs:

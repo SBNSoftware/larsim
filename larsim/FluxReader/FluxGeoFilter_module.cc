@@ -204,11 +204,11 @@ bool FluxGeoFilter::filter(art::Event& e)
     _nu_icarus_r = std::sqrt((_nu_icarus_x - _x_shift) * (_nu_icarus_x - _x_shift) + _nu_icarus_y * _nu_icarus_y);
     _nu_icarus_oaa = std::atan(_nu_icarus_r * _nu_icarus_r / _baseline_icarus);
 
-    if (_nu_r > 1500) {
-      result = false;
-    } else {
-      result = true;
-    }
+    // if (_nu_r > 1500) {
+    //   result = false;
+    // } else {
+    //   result = true;
+    // }
 
     TGeoNode* node=rgeo->FindNode();
     // const double *xyz = rgeo->GetCurrentPoint();
@@ -219,7 +219,7 @@ bool FluxGeoFilter::filter(art::Event& e)
       rgeo->FindNextBoundary();
       node=gGeoManager->Step();
       if (fVolFlux.find(volname)!=fVolFlux.end()) {
-        // result=true;
+        result=true;
         // const double *xyz = rgeo->GetCurrentPoint();
         // std::cout << "-> It intersects the active volume. E = " << nu.E() << std::endl;
         // std::cout << "-> It intersects the active volume. (x, y, z) " << xyz[0] << " " << xyz[1] << " " << xyz[2] << " " << std::endl;
