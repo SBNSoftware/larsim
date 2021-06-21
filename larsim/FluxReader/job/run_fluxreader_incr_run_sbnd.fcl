@@ -1,0 +1,3 @@
+#include "run_fluxreader_sbnd.fcl"
+
+source.SelfIncrementRun: true

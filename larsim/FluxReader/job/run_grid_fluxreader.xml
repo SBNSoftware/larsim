@@ -1,12 +1,14 @@
 <?xml version="1.0"?>
 
 <!-- Production Project -->
+<!-- Takes about 2.5 minues to run on a signle gsimple file -->
 
 <!DOCTYPE project [
-<!ENTITY release "v09_18_00">
+<!ENTITY release "v09_19_00">
 <!ENTITY releasetag "e19:prof">
-<!ENTITY my_version "v1">
+<!ENTITY my_version "v4">
 <!ENTITY my_run "1">
+<!ENTITY flux_config "H">
 <!ENTITY name "mdeltutt_fluxreader">
 <!-- <!ENTITY tag "test_ob_on"> -->
 <!ENTITY file_type "data">
@@ -15,14 +17,13 @@
 ]>
 
 
-<project name="&name;">
+<project name="&name;_&flux_config;">
 
   <!-- Group -->
   <group>sbnd</group>
 
   <!-- Project size -->
-  <!-- <numevents>1000000000</numevents> -->
-  <numevents>20000000</numevents>
+  <numevents>1000000000</numevents>
 
   <!-- Batch resources -->
   <resource>DEDICATED,OPPORTUNISTIC,OFFSITE</resource>
@@ -31,26 +32,29 @@
   <larsoft>
     <tag>&release;</tag>
     <qual>&releasetag;</qual>
-    <local>&PNFSpath;Tarballs/sbndcode_v09_18_00_02_prism__&my_version;.tgz</local>
+    <local>&PNFSpath;Tarballs/sbndcode_v09_19_00_01_prism__&my_version;.tgz</local>
   </larsoft>
 
   <!-- Project stages -->
 
   <stage name="gen">
-    <fcl>run_fluxreader_sbnd.fcl</fcl>
+    <!-- for flux f-->
+    <!-- <fcl>run_fluxreader_sbnd.fcl</fcl>  -->
+    <!-- for flux h-->
+    <fcl>run_fluxreader_incr_run_sbnd.fcl</fcl> 
     <!-- <inputlist>/pnfs/sbnd/resilient/users/mdeltutt/Filelists/gsimple_flux_configF-v1.list</inputlist> -->
     <!-- <inputlist>/pnfs/sbnd/resilient/users/mdeltutt/Filelists/gsimple_flux_configG-v1.list</inputlist> -->
-    <inputlist>/pnfs/sbnd/resilient/users/mdeltutt/Filelists/gsimple_flux_configH-v1.list</inputlist>
+    <inputlist>/pnfs/sbnd/resilient/users/mdeltutt/Filelists/gsimple_flux_config&flux_config;-v1.list</inputlist>
     <!-- <defname>&name;_&tag;_gen</defname> -->
     <!-- <maxfilesperjob>50</maxfilesperjob> -->
-    <maxfilesperjob>10</maxfilesperjob>
-    <outdir>/pnfs/sbnd/scratch/users/mdeltutt/&release;/fluxreader_configH_&my_version;_&my_run;</outdir>
-    <workdir>&PNFSpath;grid_workdir_sbnd/fluxreader</workdir>
+    <maxfilesperjob>5</maxfilesperjob>
+    <outdir>/pnfs/sbnd/scratch/users/mdeltutt/&release;/fluxreader_config&flux_config;_&my_version;_&my_run;</outdir>
+    <workdir>&PNFSpath;grid_workdir_sbnd/fluxreader_config&flux_config;</workdir>
     <!-- <numjobs>100</numjobs> -->
-    <numjobs>1</numjobs>
+    <numjobs>1200</numjobs>
     <datatier>generated</datatier>
     <memory>2000</memory>
-    <jobsub> --expected-lifetime=2h -Q --generate-email-summary -l '+SingularityImage="/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest"' </jobsub>
+    <jobsub> --expected-lifetime=2h -Q --generate-email-summary -l +SingularityImage=\"/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest\" --append_condor_requirements='(TARGET.HAS_SINGULARITY=?=true)' </jobsub>
     <disk>80GB</disk>
   </stage>
 

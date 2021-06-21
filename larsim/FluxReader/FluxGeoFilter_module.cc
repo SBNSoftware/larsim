@@ -210,6 +210,11 @@ bool FluxGeoFilter::filter(art::Event& e)
     //   result = true;
     // }
 
+    bool in_tpc_active_area = false;
+    if (_nu_x >= -200 && _nu_x <= 200 && _nu_y >= -200 && _nu_y <= 200) {
+      in_tpc_active_area = true;
+    }
+
     TGeoNode* node=rgeo->FindNode();
     // const double *xyz = rgeo->GetCurrentPoint();
     // std::cout << "Start position (x, y, z) " << xyz[0] << " " << xyz[1] << " " << xyz[2] << " " << std::endl;
@@ -230,7 +235,9 @@ bool FluxGeoFilter::filter(art::Event& e)
         break;
       }
     }
-    _tree->Fill();
+    if (_nu_hit || in_tpc_active_area) {
+      _tree->Fill();
+    }
     /*
     geoalgo::HalfLine ray(mclist[inu].GetNeutrino().Nu().Vx(),
 			  mclist[inu].GetNeutrino().Nu().Vy(),
