@@ -1,4 +1,5 @@
 #include "SemiAnalyticalModel.h"
+#include "larsim/PhotonPropagation/PhotonPropagationUtils.h"
 
 // LArSoft Libraries
 #include "larcore/CoreUtils/ServiceUtil.h"
@@ -20,6 +21,9 @@
 
 #include "boost/math/special_functions/ellint_1.hpp"
 #include "boost/math/special_functions/ellint_3.hpp"
+
+namespace phot
+{
 
 // constructor
 SemiAnalyticalModel::SemiAnalyticalModel(fhicl::ParameterSet VUVHits, fhicl::ParameterSet VISHits, bool doReflectedLight, bool includeAnodeReflections)
@@ -259,19 +263,21 @@ SemiAnalyticalModel::VUVVisibility(geo::Point_t const& ScintPoint, OpticalDetect
       pars_ini[1] = fGHvuvpars_flat_lateral[1][j];
       pars_ini[2] = fGHvuvpars_flat_lateral[2][j];
       pars_ini[3] = fGHvuvpars_flat_lateral[3][j];
-      s1 = interpolate( fborder_corr_angulo_flat_lateral, fborder_corr_flat_lateral[0], theta, true);
-      s2 = interpolate( fborder_corr_angulo_flat_lateral, fborder_corr_flat_lateral[1], theta, true);
-      s3 = interpolate( fborder_corr_angulo_flat_lateral, fborder_corr_flat_lateral[2], theta, true);
-
+      s1 = interpolate(fborder_corr_angulo_flat_lateral,
+                       fborder_corr_flat_lateral[0], theta, true);
+      s2 = interpolate(fborder_corr_angulo_flat_lateral,
+                       fborder_corr_flat_lateral[1], theta, true);
+      s3 = interpolate(fborder_corr_angulo_flat_lateral,
+                       fborder_corr_flat_lateral[2], theta, true);
     }
     else if (opDet.orientation == 0 && fIsFlatPDCorr) { // cathode/anode
       pars_ini[0] = fGHvuvpars_flat[0][j];
       pars_ini[1] = fGHvuvpars_flat[1][j];
       pars_ini[2] = fGHvuvpars_flat[2][j];
       pars_ini[3] = fGHvuvpars_flat[3][j];
-      s1 = interpolate( fborder_corr_angulo_flat, fborder_corr_flat[0], theta, true);
-      s2 = interpolate( fborder_corr_angulo_flat, fborder_corr_flat[1], theta, true);
-      s3 = interpolate( fborder_corr_angulo_flat, fborder_corr_flat[2], theta, true);
+      s1 = interpolate(fborder_corr_angulo_flat, fborder_corr_flat[0], theta, true);
+      s2 = interpolate(fborder_corr_angulo_flat, fborder_corr_flat[1], theta, true);
+      s3 = interpolate(fborder_corr_angulo_flat, fborder_corr_flat[2], theta, true);
     }
     else {
       throw cet::exception("SemiAnalyticalModel")
@@ -284,9 +290,9 @@ SemiAnalyticalModel::VUVVisibility(geo::Point_t const& ScintPoint, OpticalDetect
     pars_ini[1] = fGHvuvpars_dome[1][j];
     pars_ini[2] = fGHvuvpars_dome[2][j];
     pars_ini[3] = fGHvuvpars_dome[3][j];
-    s1 = interpolate( fborder_corr_angulo_dome, fborder_corr_dome[0], theta, true);
-    s2 = interpolate( fborder_corr_angulo_dome, fborder_corr_dome[1], theta, true);
-    s3 = interpolate( fborder_corr_angulo_dome, fborder_corr_dome[2], theta, true);
+    s1 = interpolate(fborder_corr_angulo_dome, fborder_corr_dome[0], theta, true);
+    s2 = interpolate(fborder_corr_angulo_dome, fborder_corr_dome[1], theta, true);
+    s3 = interpolate(fborder_corr_angulo_dome, fborder_corr_dome[2], theta, true);
   }
   else {
     throw cet::exception("SemiAnalyticalModel")
@@ -358,9 +364,9 @@ SemiAnalyticalModel::detectedReflectedVisibilities(std::vector<double>& ReflDete
     pars_ini[1] = fGHvuvpars_flat[1][0];
     pars_ini[2] = fGHvuvpars_flat[2][0];
     pars_ini[3] = fGHvuvpars_flat[3][0];
-    s1 = interpolate( fborder_corr_angulo_flat, fborder_corr_flat[0], 0, true);
-    s2 = interpolate( fborder_corr_angulo_flat, fborder_corr_flat[1], 0, true);
-    s3 = interpolate( fborder_corr_angulo_flat, fborder_corr_flat[2], 0, true);
+    s1 = interpolate(fborder_corr_angulo_flat, fborder_corr_flat[0], 0, true);
+    s2 = interpolate(fborder_corr_angulo_flat, fborder_corr_flat[1], 0, true);
+    s3 = interpolate(fborder_corr_angulo_flat, fborder_corr_flat[2], 0, true);
   }
   else {
     throw cet::exception("SemiAnalyticalModel")
@@ -461,28 +467,40 @@ SemiAnalyticalModel::VISVisibility(geo::Point_t const& ScintPoint, OpticalDetect
   // flat PDs
   if ((opDet.type == 0 || opDet.type == 2) && (fIsFlatPDCorr || fIsFlatPDCorrLat)) {
     // cathode/anode case
-    if (opDet.orientation == 0 && fIsFlatPDCorr) border_correction = interpolate2(fvis_distances_x_flat, fvis_distances_r_flat, fvispars_flat, d_c, r, k);
+    if (opDet.orientation == 0 && fIsFlatPDCorr){
+      border_correction = interpolate2(fvis_distances_x_flat,
+                                       fvis_distances_r_flat,
+                                       fvispars_flat, d_c, r, k);
+    }
     // laterals case
-    else if (opDet.orientation == 1 && fIsFlatPDCorrLat) border_correction = interpolate2(fvis_distances_x_flat_lateral, fvis_distances_r_flat_lateral, fvispars_flat_lateral, d_c, r, k);
+    else if (opDet.orientation == 1 && fIsFlatPDCorrLat) {
+      border_correction = interpolate2(fvis_distances_x_flat_lateral,
+                                       fvis_distances_r_flat_lateral,
+                                       fvispars_flat_lateral, d_c, r, k);
+    }
     else {
       throw cet::exception("SemiAnalyticalModel")
         << "Error: Invalid optical detector shape requested or corrections are missing - configuration error in semi-analytical model." << "\n";
     }
   }
   // dome PDs
-  else if (opDet.type == 1 && fIsDomePDCorr) border_correction = interpolate2(fvis_distances_x_dome, fvis_distances_r_dome, fvispars_dome, d_c, r, k);
+  else if (opDet.type == 1 && fIsDomePDCorr) {
+    border_correction = interpolate2(fvis_distances_x_dome,
+                                     fvis_distances_r_dome,
+                                     fvispars_dome, d_c, r, k);
+  }
   else {
     throw cet::exception("SemiAnalyticalModel")
       << "Error: Invalid optical detector shape requested or corrections are missing - configuration error in semi-analytical model." << "\n";
   }
 
   // apply anode reflectivity factor
-  if (AnodeMode) border_correction = border_correction * fAnodeReflectivity;
+  if (AnodeMode) border_correction *= fAnodeReflectivity;
 
   // apply field cage transparency factor
   if (fApplyFieldCageTransparency) {
-    if (opDet.orientation == 1) border_correction = border_correction * fFieldCageTransparencyLateral;
-    else if (opDet.orientation == 0) border_correction = border_correction * fFieldCageTransparencyCathode;
+    if (opDet.orientation == 1) border_correction *= fFieldCageTransparencyLateral;
+    else if (opDet.orientation == 0) border_correction *= fFieldCageTransparencyCathode;
   }
 
   return border_correction * visibility_geo / cosine_vis;
@@ -698,88 +716,4 @@ SemiAnalyticalModel::isOpDetInSameTPC(geo::Point_t const& ScintPoint,
   return true;
 }
 
-//......................................................................
-double
-SemiAnalyticalModel::fast_acos(double x) const
-{
-  double negate = double(x < 0);
-  x = std::abs(x);
-  x -= double(x > 1.0) * (x - 1.0); // <- equivalent to min(1.0,x), but faster
-  double ret = -0.0187293;
-  ret = ret * x;
-  ret = ret + 0.0742610;
-  ret = ret * x;
-  ret = ret - 0.2121144;
-  ret = ret * x;
-  ret = ret + 1.5707288;
-  ret = ret * std::sqrt(1.0 - x);
-  ret = ret - 2. * negate * ret;
-  return negate * 3.14159265358979 + ret;
-}
-
-//......................................................................
-// Returns interpolated value at x from parallel arrays ( xData, yData )
-// Assumes that xData has at least two elements, is sorted and is strictly
-// monotonic increasing boolean argument extrapolate determines behaviour
-// beyond ends of array (if needed)
-double
-SemiAnalyticalModel::interpolate(const std::vector<double>& xData,
-                                 const std::vector<double>& yData,
-                                 double x,
-                                 bool extrapolate,
-                                 size_t i) const
-{
-  if (i == 0) {
-    size_t size = xData.size();
-    if (x >= xData[size - 2]) { // special case: beyond right end
-      i = size - 2;
-    }
-    else {
-      while (x > xData[i + 1])
-        i++;
-    }
-  }
-  double xL = xData[i];
-  double xR = xData[i + 1];
-  double yL = yData[i];
-  double yR = yData[i + 1]; // points on either side (unless beyond ends)
-  if (!extrapolate) {       // if beyond ends of array and not extrapolating
-    if (x < xL) return yL;
-    if (x > xR) return yL;
-  }
-  const double dydx = (yR - yL) / (xR - xL); // gradient
-  return yL + dydx * (x - xL);               // linear interpolation
-}
-
-double
-SemiAnalyticalModel::interpolate2(const std::vector<double>& xDistances,
-                                  const std::vector<double>& rDistances,
-                                  const std::vector<std::vector<std::vector<double>>>& parameters,
-                                  const double x,
-                                  const double r,
-                                  const size_t k) const
-{
-  // interpolate in x for each r bin, for angle bin k
-  const size_t nbins_r = parameters[k].size();
-  std::vector<double> interp_vals(nbins_r, 0.0);
-  {
-    size_t idx = 0;
-    size_t size = xDistances.size();
-    if (x >= xDistances[size - 2])
-      idx = size - 2;
-    else {
-      while (x > xDistances[idx + 1])
-        idx++;
-    }
-    for (size_t i = 0; i < nbins_r; ++i) {
-      interp_vals[i] = interpolate(xDistances,
-                                   parameters[k][i],
-                                   x,
-                                   false,
-                                   idx);
-    }
-  }
-  // interpolate in r
-  double border_correction = interpolate(rDistances, interp_vals, r, false);
-  return border_correction;
-}
+}// namespace phot

@@ -28,6 +28,8 @@
 typedef boost::math::policies::policy<boost::math::policies::promote_double<false>> noLDoublePromote;
 
 
+namespace phot
+{
 class SemiAnalyticalModel {
 
 public:
@@ -85,70 +87,9 @@ private:
     // dome aperture calculation
     double Omega_Dome_Model(const double distance, const double theta) const;
 
-    // utility functions
+    // TODO: replace with geometry service
     bool isOpDetInSameTPC(geo::Point_t const& ScintPoint, geo::Point_t const& OpDetPoint) const;
 
-    double fast_acos(double x) const;
-
-    double interpolate(const std::vector<double>& xData,
-                       const std::vector<double>& yData,
-                       double x,
-                       bool extrapolate,
-                       size_t i = 0) const;
-
-    double interpolate2(const std::vector<double>& xDistances,
-                        const std::vector<double>& rDistances,
-                        const std::vector<std::vector<std::vector<double>>>& parameters,
-                        const double x,
-                        const double r,
-                        const size_t k) const;
-
-    // implements relative method - do not use for comparing with zero
-    // use this most of the time, tolerance needs to be meaningful in your context
-    template <typename TReal>
-    inline constexpr static bool
-    isApproximatelyEqual(TReal a, TReal b, TReal tolerance = std::numeric_limits<TReal>::epsilon())
-    {
-        TReal diff = std::fabs(a - b);
-        if (diff <= tolerance) return true;
-        if (diff < std::fmax(std::fabs(a), std::fabs(b)) * tolerance) return true;
-        return false;
-    }
-
-    // supply tolerance that is meaningful in your context
-    // for example, default tolerance may not work if you are comparing double with
-    // float
-    template <typename TReal>
-    inline constexpr static bool
-    isApproximatelyZero(TReal a, TReal tolerance = std::numeric_limits<TReal>::epsilon())
-    {
-        if (std::fabs(a) <= tolerance) return true;
-        return false;
-    }
-
-    // use this when you want to be on safe side
-    // for example, don't start rover unless signal is above 1
-    template <typename TReal>
-    inline constexpr static bool
-    isDefinitelyLessThan(TReal a, TReal b, TReal tolerance = std::numeric_limits<TReal>::epsilon())
-    {
-        TReal diff = a - b;
-        if (diff < tolerance) return true;
-        if (diff < std::fmax(std::fabs(a), std::fabs(b)) * tolerance) return true;
-        return false;
-    }
-
-    template <typename TReal>
-    inline constexpr static bool
-    isDefinitelyGreaterThan(TReal a, TReal b, TReal tolerance = std::numeric_limits<TReal>::epsilon())
-    {
-        TReal diff = a - b;
-        if (diff > tolerance) return true;
-        if (diff > std::fmax(std::fabs(a), std::fabs(b)) * tolerance) return true;
-        return false;
-    }
-
-    // fhicl parameter sets
     const fhicl::ParameterSet fVUVHitsParams;
     const fhicl::ParameterSet fVISHitsParams;
 
@@ -216,5 +157,7 @@ private:
     std::vector<std::vector<std::vector<double>>> fvispars_dome;
 
 };
+
+}// namespace phot
 
 #endif
