@@ -2,8 +2,8 @@
 #include "larsim/PhotonPropagation/PhotonPropagationUtils.h"
 
 // LArSoft libraries
-#include "larcore/Geometry/Geometry.h"
 #include "larcore/CoreUtils/ServiceUtil.h"
+#include "larcore/Geometry/Geometry.h"
 #include "larcorealg/CoreUtils/counter.h"
 #include "larcorealg/Geometry/CryostatGeo.h"
 #include "larcorealg/Geometry/GeometryCore.h"
@@ -18,147 +18,147 @@
 
 #include <iostream>
 
-namespace phot
-{
+namespace phot {
 
-PropagationTimeModel::PropagationTimeModel(fhicl::ParameterSet VUVTimingParams,
-                                           fhicl::ParameterSet VISTimingParams,
-                                           CLHEP::HepRandomEngine& scintTimeEngine,
-                                           bool doReflectedLight, bool GeoPropTimeOnly)
-  :
-  fGeoPropTimeOnly(GeoPropTimeOnly)
-  , fUniformGen(scintTimeEngine)
-{
-  mf::LogInfo("PropagationTimeModel") << "Initializing Photon propagation time model." << std::endl;
+PropagationTimeModel::PropagationTimeModel(
+    fhicl::ParameterSet VUVTimingParams, fhicl::ParameterSet VISTimingParams,
+    CLHEP::HepRandomEngine &scintTimeEngine, bool doReflectedLight,
+    bool GeoPropTimeOnly)
+    : fGeoPropTimeOnly(GeoPropTimeOnly), fUniformGen(scintTimeEngine) {
+  mf::LogInfo("PropagationTimeModel")
+      << "Initializing Photon propagation time model." << std::endl;
   if (!fGeoPropTimeOnly) {
     // Direct / VUV
     mf::LogInfo("PropagationTimeModel") << "Using VUV timing parameterization";
-    fstep_size                = VUVTimingParams.get<double>("step_size");
-    fmin_d                    = VUVTimingParams.get<double>("min_d");
-    fvuv_vgroup_mean          = VUVTimingParams.get<double>("vuv_vgroup_mean");
-    fvuv_vgroup_max           = VUVTimingParams.get<double>("vuv_vgroup_max");
-    finflexion_point_distance = VUVTimingParams.get<double>("inflexion_point_distance");
-    fangle_bin_timing_vuv     = VUVTimingParams.get<double>("angle_bin_timing_vuv");
+    fstep_size = VUVTimingParams.get<double>("step_size");
+    fmin_d = VUVTimingParams.get<double>("min_d");
+    fvuv_vgroup_mean = VUVTimingParams.get<double>("vuv_vgroup_mean");
+    fvuv_vgroup_max = VUVTimingParams.get<double>("vuv_vgroup_max");
+    finflexion_point_distance =
+        VUVTimingParams.get<double>("inflexion_point_distance");
+    fangle_bin_timing_vuv = VUVTimingParams.get<double>("angle_bin_timing_vuv");
 
     generateVUVParams(VUVTimingParams, scintTimeEngine);
 
     // Reflected / Visible
     if (doReflectedLight) {
-      mf::LogInfo("PropagationTimeModel") << "Using VIS (reflected) timing parameterization";
-      fdistances_refl        = VISTimingParams.get<std::vector<double>>("Distances_refl");
-      fradial_distances_refl = VISTimingParams.get<std::vector<double>>("Distances_radial_refl");
-      fcut_off_pars          = VISTimingParams.get<std::vector<std::vector<std::vector<double>>>>("Cut_off");
-      ftau_pars              = VISTimingParams.get<std::vector<std::vector<std::vector<double>>>>("Tau");
-      fvis_vmean             = VISTimingParams.get<double>("vis_vmean");
-      fangle_bin_timing_vis  = VISTimingParams.get<double>("angle_bin_timing_vis");
+      mf::LogInfo("PropagationTimeModel")
+          << "Using VIS (reflected) timing parameterization";
+      fdistances_refl =
+          VISTimingParams.get<std::vector<double>>("Distances_refl");
+      fradial_distances_refl =
+          VISTimingParams.get<std::vector<double>>("Distances_radial_refl");
+      fcut_off_pars =
+          VISTimingParams.get<std::vector<std::vector<std::vector<double>>>>(
+              "Cut_off");
+      ftau_pars =
+          VISTimingParams.get<std::vector<std::vector<std::vector<double>>>>(
+              "Tau");
+      fvis_vmean = VISTimingParams.get<double>("vis_vmean");
+      fangle_bin_timing_vis =
+          VISTimingParams.get<double>("angle_bin_timing_vis");
     }
   }
 
   if (fGeoPropTimeOnly) {
-    mf::LogInfo("PropagationTimeModel") << "Using geometric VUV time propagation";
-      fvuv_vgroup_mean       = VUVTimingParams.get<double>("vuv_vgroup_mean");
+    mf::LogInfo("PropagationTimeModel")
+        << "Using geometric VUV time propagation";
+    fvuv_vgroup_mean = VUVTimingParams.get<double>("vuv_vgroup_mean");
   }
 
   // access information from the geometry service
-  geo::GeometryCore const& geom = *(lar::providerFrom<geo::Geometry>());
+  geo::GeometryCore const &geom = *(lar::providerFrom<geo::Geometry>());
 
   // get TPC information
   fplane_depth = std::abs(geom.TPC(0, 0).GetCathodeCenter().X());
   larg4::ISTPC is_tpc = larg4::ISTPC{*(lar::providerFrom<geo::Geometry>())};
-  std::vector<geo::BoxBoundedGeo> activeVolumes = is_tpc.extractActiveLArVolume(geom);
+  std::vector<geo::BoxBoundedGeo> activeVolumes =
+      is_tpc.extractActiveLArVolume(geom);
   fcathode_centre = {geom.TPC(0, 0).GetCathodeCenter().X(),
-                     activeVolumes[0].CenterY(),
-                     activeVolumes[0].CenterZ()};
+                     activeVolumes[0].CenterY(), activeVolumes[0].CenterZ()};
 
   // get PDS information
   size_t nOpDets = geom.NOpDets();
-  fOpDetOrientation.reserve(nOpDets); fOpDetCenter.reserve(nOpDets);
+  fOpDetOrientation.reserve(nOpDets);
+  fOpDetCenter.reserve(nOpDets);
   for (size_t const i : util::counter(nOpDets)) {
-    geo::OpDetGeo const& opDet = geom.OpDetGeoFromOpDet(i);
+    geo::OpDetGeo const &opDet = geom.OpDetGeoFromOpDet(i);
     fOpDetCenter.push_back(opDet.GetCenter());
-    if (opDet.isSphere()) {  // dome PMTs
+    if (opDet.isSphere()) { // dome PMTs
       fOpDetOrientation.push_back(0);
-    }
-    else if (opDet.isBar()) {
+    } else if (opDet.isBar()) {
       // determine orientation to get correction OpDet dimensions
       if (opDet.Width() > opDet.Height()) { // laterals, Y dimension smallest
         fOpDetOrientation.push_back(1);
-      }
-      else {  // anode/cathode (default), X dimension smallest
+      } else { // anode/cathode (default), X dimension smallest
         fOpDetOrientation.push_back(0);
       }
-    }
-    else {
+    } else {
       fOpDetOrientation.push_back(0);
     }
   }
-  mf::LogInfo("PropagationTimeModel") << "Photon propagation time model initalized." << std::endl;
+  mf::LogInfo("PropagationTimeModel")
+      << "Photon propagation time model initalized." << std::endl;
 }
 
 //......................................................................
 // Propagation time calculation function
-void
-PropagationTimeModel:: propagationTime(std::vector<double>& arrival_time_dist,
-                                       geo::Point_t const& x0,
-                                       const size_t OpChannel,
-                                       bool Reflected)
-{
+void PropagationTimeModel::propagationTime(
+    std::vector<double> &arrival_time_dist, geo::Point_t const &x0,
+    const size_t OpChannel, bool Reflected) {
   if (!fGeoPropTimeOnly) {
     // Get VUV photons transport time distribution from the parametrization
-    geo::Point_t const& opDetCenter = fOpDetCenter[OpChannel];
+    geo::Point_t const &opDetCenter = fOpDetCenter[OpChannel];
     if (!Reflected) {
-      double distance = std::hypot(x0.X() - opDetCenter.X(),
-                                   x0.Y() - opDetCenter.Y(),
-                                   x0.Z() - opDetCenter.Z());
+      double distance =
+          std::hypot(x0.X() - opDetCenter.X(), x0.Y() - opDetCenter.Y(),
+                     x0.Z() - opDetCenter.Z());
       double cosine;
-      if (fOpDetOrientation[OpChannel] == 1) cosine = std::abs(x0.Y() - opDetCenter.Y()) / distance;
-      else cosine = std::abs(x0.X() - opDetCenter.X()) / distance;
+      if (fOpDetOrientation[OpChannel] == 1)
+        cosine = std::abs(x0.Y() - opDetCenter.Y()) / distance;
+      else
+        cosine = std::abs(x0.X() - opDetCenter.X()) / distance;
 
-      double theta = fast_acos(cosine)*180./CLHEP::pi;
-      int angle_bin = theta/fangle_bin_timing_vuv;
+      double theta = fast_acos(cosine) * 180. / CLHEP::pi;
+      int angle_bin = theta / fangle_bin_timing_vuv;
       getVUVTimes(arrival_time_dist, distance, angle_bin); // in ns
-    }
-    else {
+    } else {
       getVISTimes(arrival_time_dist, geo::vect::toTVector3(x0),
                   geo::vect::toTVector3(opDetCenter)); // in ns
     }
-  }
-  else if (fGeoPropTimeOnly && !Reflected) {
+  } else if (fGeoPropTimeOnly && !Reflected) {
     // Get VUV photons arrival time geometrically
-    geo::Point_t const& opDetCenter = fOpDetCenter[OpChannel];
-    double distance = std::hypot(x0.X() - opDetCenter.X(),
-                                 x0.Y() - opDetCenter.Y(),
-                                 x0.Z() - opDetCenter.Z());
+    geo::Point_t const &opDetCenter = fOpDetCenter[OpChannel];
+    double distance =
+        std::hypot(x0.X() - opDetCenter.X(), x0.Y() - opDetCenter.Y(),
+                   x0.Z() - opDetCenter.Z());
     getVUVTimesGeo(arrival_time_dist, distance); // in ns
-  }
-  else {
+  } else {
     throw cet::exception("PropagationTimeModel")
-      << "Propagation time model not found.";
+        << "Propagation time model not found.";
   }
 }
 
 //......................................................................
 // VUV propagation times calculation function
-void
-PropagationTimeModel::getVUVTimes(std::vector<double>& arrivalTimes,
-                                  const double distance,
-                                  const size_t angle_bin)
-{
+void PropagationTimeModel::getVUVTimes(std::vector<double> &arrivalTimes,
+                                       const double distance,
+                                       const size_t angle_bin) {
   if (distance < fmin_d) {
     // times are fixed shift i.e. direct path only
     double t_prop_correction = distance / fvuv_vgroup_mean;
     for (size_t i = 0; i < arrivalTimes.size(); ++i) {
       arrivalTimes[i] = t_prop_correction;
     }
-  }
-  else {
+  } else {
     // determine nearest parameterisation in discretisation
     int index = std::round((distance - fmin_d) / fstep_size);
     // randomly sample parameterisation for each photon
     for (size_t i = 0; i < arrivalTimes.size(); ++i) {
-      arrivalTimes[i] = fVUVTimingGen[angle_bin][index].fire()*
-        (fVUV_max[angle_bin][index]-fVUV_min[angle_bin][index]) +
-        fVUV_min[angle_bin][index];
+      arrivalTimes[i] =
+          fVUVTimingGen[angle_bin][index].fire() *
+              (fVUV_max[angle_bin][index] - fVUV_min[angle_bin][index]) +
+          fVUV_min[angle_bin][index];
     }
   }
 }
@@ -166,10 +166,8 @@ PropagationTimeModel::getVUVTimes(std::vector<double>& arrivalTimes,
 //......................................................................
 // VUV arrival times calculation function
 // - pure geometric approximation for use in Xenon doped scenarios
-void
-PropagationTimeModel::getVUVTimesGeo(std::vector<double>& arrivalTimes,
-                                     const double distance) const
-{
+void PropagationTimeModel::getVUVTimesGeo(std::vector<double> &arrivalTimes,
+                                          const double distance) const {
   // times are fixed shift i.e. direct path only
   double t_prop_correction = distance / fvuv_vgroup_mean;
   for (size_t i = 0; i < arrivalTimes.size(); ++i) {
@@ -177,38 +175,44 @@ PropagationTimeModel::getVUVTimesGeo(std::vector<double>& arrivalTimes,
   }
 }
 
-
 //......................................................................
 // VUV propagation times parameterization generation function
-void
-PropagationTimeModel::generateVUVParams(fhicl::ParameterSet& VUVTimingParams,
-                                        CLHEP::HepRandomEngine& scintTimeEngine)
-{
+void PropagationTimeModel::generateVUVParams(
+    fhicl::ParameterSet &VUVTimingParams,
+    CLHEP::HepRandomEngine &scintTimeEngine) {
   double max_d = VUVTimingParams.get<double>("max_d");
-  const size_t num_params = (max_d - fmin_d) / fstep_size; // for d < fmin_d, no parameterisaton, a delta function is used instead
-  const size_t num_angles = std::round(90./fangle_bin_timing_vuv);
+  const size_t num_params =
+      (max_d - fmin_d) / fstep_size; // for d < fmin_d, no parameterisaton, a
+                                     // delta function is used instead
+  const size_t num_angles = std::round(90. / fangle_bin_timing_vuv);
 
   // initialise vectors to contain range parameterisations
   double dummy[1] = {1.};
   fVUVTimingGen = std::vector(
-    num_angles, std::vector(num_params,CLHEP::RandGeneral(dummy, 1)));
-  fVUV_max    = std::vector(num_angles, std::vector(num_params, 0.0));
-  fVUV_min    = std::vector(num_angles, std::vector(num_params, 0.0));
+      num_angles, std::vector(num_params, CLHEP::RandGeneral(dummy, 1)));
+  fVUV_max = std::vector(num_angles, std::vector(num_params, 0.0));
+  fVUV_min = std::vector(num_angles, std::vector(num_params, 0.0));
 
   std::vector<std::vector<double>> parameters[7];
-  parameters[0] = std::vector(1, VUVTimingParams.get<std::vector<double>>("Distances_landau"));
-  parameters[1] = VUVTimingParams.get<std::vector<std::vector<double>>>("Norm_over_entries");
+  parameters[0] = std::vector(
+      1, VUVTimingParams.get<std::vector<double>>("Distances_landau"));
+  parameters[1] = VUVTimingParams.get<std::vector<std::vector<double>>>(
+      "Norm_over_entries");
   parameters[2] = VUVTimingParams.get<std::vector<std::vector<double>>>("Mpv");
-  parameters[3] = VUVTimingParams.get<std::vector<std::vector<double>>>("Width");
-  parameters[4] = std::vector(1, VUVTimingParams.get<std::vector<double>>("Distances_exp"));
-  parameters[5] = VUVTimingParams.get<std::vector<std::vector<double>>>("Slope");
-  parameters[6] = VUVTimingParams.get<std::vector<std::vector<double>>>("Expo_over_Landau_norm");
+  parameters[3] =
+      VUVTimingParams.get<std::vector<std::vector<double>>>("Width");
+  parameters[4] =
+      std::vector(1, VUVTimingParams.get<std::vector<double>>("Distances_exp"));
+  parameters[5] =
+      VUVTimingParams.get<std::vector<std::vector<double>>>("Slope");
+  parameters[6] = VUVTimingParams.get<std::vector<std::vector<double>>>(
+      "Expo_over_Landau_norm");
 
   // time range
   const double signal_t_range = 5000.;
 
-  for (size_t angle_bin=0; angle_bin<num_angles; ++angle_bin) {
-    for (size_t index=0; index<num_params; ++index) {
+  for (size_t angle_bin = 0; angle_bin < num_angles; ++angle_bin) {
+    for (size_t index = 0; index < num_params; ++index) {
       double distance_in_cm = (index * fstep_size) + fmin_d;
 
       // direct path transport time
@@ -219,23 +223,19 @@ PropagationTimeModel::generateVUVParams(fhicl::ParameterSet& VUVTimingParams,
       // transportation timing vs distance.
       // Getting the landau parameters from the time parametrization
       std::array<double, 3> pars_landau;
-      interpolate3(pars_landau,
-                   parameters[0][0],
-                   parameters[2][angle_bin],
-                   parameters[3][angle_bin],
-                   parameters[1][angle_bin],
-                   distance_in_cm,
-                   true);
+      interpolate3(pars_landau, parameters[0][0], parameters[2][angle_bin],
+                   parameters[3][angle_bin], parameters[1][angle_bin],
+                   distance_in_cm, true);
       TF1 VUVTiming;
       // Deciding which time model to use (depends on the distance)
       // defining useful times for the VUV arrival time shapes
       if (distance_in_cm >= finflexion_point_distance) {
         // Set model: Landau
-        double pars_far[4] = {t_direct_min, pars_landau[0], pars_landau[1], pars_landau[2]};
+        double pars_far[4] = {t_direct_min, pars_landau[0], pars_landau[1],
+                              pars_landau[2]};
         VUVTiming = TF1("VUVTiming", model_far, 0, signal_t_range, 4);
         VUVTiming.SetParameters(pars_far);
-      }
-      else {
+      } else {
         // Set model: Landau + Exponential
         VUVTiming = TF1("VUVTiming", model_close, 0, signal_t_range, 7);
         double pars_expo[2];
@@ -248,35 +248,36 @@ PropagationTimeModel::generateVUVParams(fhicl::ParameterSet& VUVTimingParams,
         pars_expo[0] = std::log(pars_expo[0]);
         // this is to find the intersection point between the two functions:
         TF1 fint = TF1("fint", finter_d, pars_landau[0], 4 * t_direct_mean, 5);
-        double parsInt[5] = {
-          pars_landau[0], pars_landau[1], pars_landau[2], pars_expo[0], pars_expo[1]};
+        double parsInt[5] = {pars_landau[0], pars_landau[1], pars_landau[2],
+                             pars_expo[0], pars_expo[1]};
         fint.SetParameters(parsInt);
         double t_int = fint.GetMinimumX();
         double minVal = fint.Eval(t_int);
         // the functions must intersect - output warning if they don't
         if (minVal > 0.015) {
           mf::LogWarning("PropagationTimeModel")
-            << "WARNING: Parametrization of VUV light discontinuous for distance = "
-            << distance_in_cm << std::endl;
+              << "WARNING: Parametrization of VUV light discontinuous for "
+                 "distance = "
+              << distance_in_cm << std::endl;
           mf::LogWarning("PropagationTimeModel")
-            << "WARNING: This shouldn't be happening " << std::endl;
+              << "WARNING: This shouldn't be happening " << std::endl;
         }
-        double parsfinal[7] = {t_int,
-                               pars_landau[0],
-                               pars_landau[1],
-                               pars_landau[2],
-                               pars_expo[0],
-                               pars_expo[1],
+        double parsfinal[7] = {t_int,          pars_landau[0], pars_landau[1],
+                               pars_landau[2], pars_expo[0],   pars_expo[1],
                                t_direct_min};
         VUVTiming.SetParameters(parsfinal);
       }
 
       // set the number of points used to sample parameterisation
-      // for shorter distances, peak is sharper so more sensitive sampling required
+      // for shorter distances, peak is sharper so more sensitive sampling
+      // required
       int sampling;
-      if (distance_in_cm < 50) sampling = 10000;
-      else if (distance_in_cm < 100) sampling = 5000;
-      else sampling = 1000;
+      if (distance_in_cm < 50)
+        sampling = 10000;
+      else if (distance_in_cm < 100)
+        sampling = 5000;
+      else
+        sampling = 1000;
       VUVTiming.SetNpx(sampling);
 
       // calculate max and min distance relevant to sample parameterisation
@@ -289,27 +290,26 @@ PropagationTimeModel::generateVUVParams(fhicl::ParameterSet& VUVTimingParams,
 
       // create the distributions that represent the parametrised timing,
       // and used those to create a RNG that samples said distributions
-      double bin = (max - min)/(sampling-1);
+      double bin = (max - min) / (sampling - 1);
       std::vector<double> vuv_timings(sampling, 0.);
-      for (int i=0; i<sampling; ++i) vuv_timings[i] = VUVTiming.Eval(min + i*bin);
+      for (int i = 0; i < sampling; ++i)
+        vuv_timings[i] = VUVTiming.Eval(min + i * bin);
       fVUVTimingGen[angle_bin][index] = CLHEP::RandGeneral(
-        scintTimeEngine, vuv_timings.data(), vuv_timings.size());
+          scintTimeEngine, vuv_timings.data(), vuv_timings.size());
 
       // store min/max, necessary to transform to the domain of the
       // original distribution
-      fVUV_max[angle_bin][index]    = max;
-      fVUV_min[angle_bin][index]    = min;
-    }// index < num_params
-  }// angle_bin < num_angles
+      fVUV_max[angle_bin][index] = max;
+      fVUV_min[angle_bin][index] = min;
+    } // index < num_params
+  }   // angle_bin < num_angles
 }
 
 //......................................................................
 // VIS arrival times calculation functions
-void
-PropagationTimeModel::getVISTimes(std::vector<double>& arrivalTimes,
-                                  const TVector3& scintPoint,
-                                  const TVector3& opDetPoint)
-{
+void PropagationTimeModel::getVISTimes(std::vector<double> &arrivalTimes,
+                                       const TVector3 &scintPoint,
+                                       const TVector3 &opDetPoint) {
   // ***************************************************************************
   //     Calculation of earliest arrival times and corresponding unsmeared
   //     distribution
@@ -317,8 +317,10 @@ PropagationTimeModel::getVISTimes(std::vector<double>& arrivalTimes,
 
   // set plane_depth for correct TPC:
   double plane_depth;
-  if (scintPoint[0] < 0) plane_depth = -fplane_depth;
-  else plane_depth = fplane_depth;
+  if (scintPoint[0] < 0)
+    plane_depth = -fplane_depth;
+  else
+    plane_depth = fplane_depth;
 
   // calculate point of reflection for shortest path
   TVector3 bounce_point(plane_depth, scintPoint[1], scintPoint[2]);
@@ -346,8 +348,7 @@ PropagationTimeModel::getVISTimes(std::vector<double>& arrivalTimes,
   double vuv_time;
   if (VUVdist < fmin_d) {
     vuv_time = VUVdist / fvuv_vgroup_max;
-  }
-  else {
+  } else {
     // find index of required parameterisation
     const size_t index = std::round((VUVdist - fmin_d) / fstep_size);
     // find shortest time
@@ -375,7 +376,7 @@ PropagationTimeModel::getVISTimes(std::vector<double>& arrivalTimes,
   // cut-off
   // interpolate in d_c for each r bin
   std::vector<double> interp_vals(fcut_off_pars[theta_bin].size(), 0.0);
-  for (size_t i = 0; i < fcut_off_pars[theta_bin].size(); i++){
+  for (size_t i = 0; i < fcut_off_pars[theta_bin].size(); i++) {
     interp_vals[i] = interpolate(fdistances_refl, fcut_off_pars[theta_bin][i],
                                  distance_cathode_plane, true);
   }
@@ -385,7 +386,7 @@ PropagationTimeModel::getVISTimes(std::vector<double>& arrivalTimes,
   // tau
   // interpolate in x for each r bin
   std::vector<double> interp_vals_tau(ftau_pars[theta_bin].size(), 0.0);
-  for (size_t i = 0; i < ftau_pars[theta_bin].size(); i++){
+  for (size_t i = 0; i < ftau_pars[theta_bin].size(); i++) {
     interp_vals_tau[i] = interpolate(fdistances_refl, ftau_pars[theta_bin][i],
                                      distance_cathode_plane, true);
   }
@@ -396,7 +397,9 @@ PropagationTimeModel::getVISTimes(std::vector<double>& arrivalTimes,
   for (size_t i = 0; i < arrivalTimes.size(); ++i) {
     double arrival_time_smeared;
     // if time is already greater than cutoff, do not apply smearing
-    if (arrivalTimes[i] >= cutoff) { continue; }
+    if (arrivalTimes[i] >= cutoff) {
+      continue;
+    }
     // otherwise smear
     else {
       unsigned int counter = 0;
@@ -407,13 +410,13 @@ PropagationTimeModel::getVISTimes(std::vector<double>& arrivalTimes,
         if (counter >= 10) {
           arrival_time_smeared = arrivalTimes[i]; // don't smear
           break;
-        }
-        else {
+        } else {
           // generate random number in appropriate range
           double x = fUniformGen.fire(0.5, 1.0);
           // apply the exponential smearing
           arrival_time_smeared =
-            arrivalTimes[i] + (arrivalTimes[i] - fastest_time) * (std::pow(x, -tau) - 1);
+              arrivalTimes[i] +
+              (arrivalTimes[i] - fastest_time) * (std::pow(x, -tau) - 1);
         }
         counter++;
       } while (arrival_time_smeared > cutoff);
@@ -423,18 +426,14 @@ PropagationTimeModel::getVISTimes(std::vector<double>& arrivalTimes,
 }
 
 //......................................................................
-double
-PropagationTimeModel::finter_d(const double* x, const double* par)
-{
+double PropagationTimeModel::finter_d(const double *x, const double *par) {
   double y1 = par[2] * TMath::Landau(x[0], par[0], par[1]);
   double y2 = TMath::Exp(par[3] + x[0] * par[4]);
   return TMath::Abs(y1 - y2);
 }
 
 //......................................................................
-double
-PropagationTimeModel::model_close(const double* x, const double* par)
-{
+double PropagationTimeModel::model_close(const double *x, const double *par) {
   // par0 = joining point
   // par1 = Landau MPV
   // par2 = Landau width
@@ -444,21 +443,22 @@ PropagationTimeModel::model_close(const double* x, const double* par)
   // par6 = t_min
   double y1 = par[3] * TMath::Landau(x[0], par[1], par[2]);
   double y2 = TMath::Exp(par[4] + x[0] * par[5]);
-  if (x[0] <= par[6] || x[0] > par[0]) y1 = 0.;
-  if (x[0] < par[0]) y2 = 0.;
+  if (x[0] <= par[6] || x[0] > par[0])
+    y1 = 0.;
+  if (x[0] < par[0])
+    y2 = 0.;
   return (y1 + y2);
 }
 
 //......................................................................
-double
-PropagationTimeModel::model_far(const double* x, const double* par)
-{
+double PropagationTimeModel::model_far(const double *x, const double *par) {
   // par1 = Landau MPV
   // par2 = Landau width
   // par3 = normalization
   // par0 = t_min
-  if (x[0] <= par[0]) return 0.;
+  if (x[0] <= par[0])
+    return 0.;
   return par[3] * TMath::Landau(x[0], par[1], par[2]);
 }
 
-}// namespace phot
+} // namespace phot
