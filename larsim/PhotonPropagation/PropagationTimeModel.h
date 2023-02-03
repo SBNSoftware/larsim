@@ -22,7 +22,7 @@
 #include "CLHEP/Random/RandGeneral.h"
 
 namespace CLHEP {
-class HepRandomEngine;
+  class HepRandomEngine;
 }
 
 // ROOT headers
@@ -33,74 +33,76 @@ class HepRandomEngine;
 
 namespace phot {
 
-class PropagationTimeModel {
+  class PropagationTimeModel {
 
-public:
-  // constructor
-  PropagationTimeModel(fhicl::ParameterSet VUVTimingParams,
-                       fhicl::ParameterSet VISTimingParams,
-                       CLHEP::HepRandomEngine &scintTimeEngine,
-                       bool doReflectedLight = false,
-                       bool GeoPropTimeOnly = false);
+  public:
+    // constructor
+    PropagationTimeModel(fhicl::ParameterSet VUVTimingParams,
+                         fhicl::ParameterSet VISTimingParams,
+                         CLHEP::HepRandomEngine& scintTimeEngine,
+                         bool doReflectedLight = false,
+                         bool GeoPropTimeOnly = false);
 
-  // propagation time
-  void propagationTime(std::vector<double> &arrival_time_dist,
-                       geo::Point_t const &x0, const size_t OpChannel,
-                       bool Reflected = false);
+    // propagation time
+    void propagationTime(std::vector<double>& arrival_time_dist,
+                         geo::Point_t const& x0,
+                         const size_t OpChannel,
+                         bool Reflected = false);
 
-private:
-  void generateVUVParams(fhicl::ParameterSet &VUVTimingParams,
-                         CLHEP::HepRandomEngine &scintTimeEngine);
+  private:
+    void generateVUVParams(fhicl::ParameterSet& VUVTimingParams,
+                           CLHEP::HepRandomEngine& scintTimeEngine);
 
-  // direct / VUV light
-  void getVUVTimes(std::vector<double> &arrivalTimes,
-                   const double distance_in_cm, const size_t angle_bin);
+    // direct / VUV light
+    void getVUVTimes(std::vector<double>& arrivalTimes,
+                     const double distance_in_cm,
+                     const size_t angle_bin);
 
-  void getVUVTimesGeo(std::vector<double> &arrivalTimes,
-                      const double distance_in_cm) const;
+    void getVUVTimesGeo(std::vector<double>& arrivalTimes, const double distance_in_cm) const;
 
-  // reflected / visible light
-  void getVISTimes(std::vector<double> &arrivalTimes,
-                   const geo::Point_t &scintPoint, const geo::Point_t &opDetPoint);
+    // reflected / visible light
+    void getVISTimes(std::vector<double>& arrivalTimes,
+                     const geo::Point_t& scintPoint,
+                     const geo::Point_t& opDetPoint);
 
-  // utility functions
-  static double finter_d(const double *x, const double *par);
+    // utility functions
+    static double finter_d(const double* x, const double* par);
 
-  static double model_close(const double *x, const double *par);
+    static double model_close(const double* x, const double* par);
 
-  static double model_far(const double *x, const double *par);
+    static double model_far(const double* x, const double* par);
 
-  // configuration
-  const bool fGeoPropTimeOnly;
+    // configuration
+    const bool fGeoPropTimeOnly;
 
-  // random numbers
-  CLHEP::RandFlat fUniformGen;
+    // random numbers
+    CLHEP::RandFlat fUniformGen;
 
-  // geometry properties
-  double fplane_depth;
-  geo::Point_t fcathode_centre;
+    // geometry properties
+    double fplane_depth;
+    geo::Point_t fcathode_centre;
 
-  // photodetector geometry properties
-  std::vector<geo::Point_t> fOpDetCenter;
-  std::vector<int> fOpDetOrientation;
+    // photodetector geometry properties
+    std::vector<geo::Point_t> fOpDetCenter;
+    std::vector<int> fOpDetOrientation;
 
-  // For VUV propagation time parametrization
-  double fstep_size, fvuv_vgroup_mean, fvuv_vgroup_max, fmin_d,
-      finflexion_point_distance, fangle_bin_timing_vuv;
-  // vector containing generated VUV timing parameterisations
-  std::vector<std::vector<CLHEP::RandGeneral>> fVUVTimingGen;
-  // vector containing min and max range VUV timing parameterisations are
-  // sampled to
-  std::vector<std::vector<double>> fVUV_max;
-  std::vector<std::vector<double>> fVUV_min;
+    // For VUV propagation time parametrization
+    double fstep_size, fvuv_vgroup_mean, fvuv_vgroup_max, fmin_d, finflexion_point_distance,
+      fangle_bin_timing_vuv;
+    // vector containing generated VUV timing parameterisations
+    std::vector<std::vector<CLHEP::RandGeneral>> fVUVTimingGen;
+    // vector containing min and max range VUV timing parameterisations are
+    // sampled to
+    std::vector<std::vector<double>> fVUV_max;
+    std::vector<std::vector<double>> fVUV_min;
 
-  // For VIS propagation time parameterisation
-  double fvis_vmean, fangle_bin_timing_vis;
-  std::vector<double> fdistances_refl;
-  std::vector<double> fradial_distances_refl;
-  std::vector<std::vector<std::vector<double>>> fcut_off_pars;
-  std::vector<std::vector<std::vector<double>>> ftau_pars;
-};
+    // For VIS propagation time parameterisation
+    double fvis_vmean, fangle_bin_timing_vis;
+    std::vector<double> fdistances_refl;
+    std::vector<double> fradial_distances_refl;
+    std::vector<std::vector<std::vector<double>>> fcut_off_pars;
+    std::vector<std::vector<std::vector<double>>> ftau_pars;
+  };
 
 } // namespace phot
 
