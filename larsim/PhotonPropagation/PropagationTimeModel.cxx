@@ -8,7 +8,6 @@
 #include "larcorealg/Geometry/CryostatGeo.h"
 #include "larcorealg/Geometry/GeometryCore.h"
 #include "larcorealg/Geometry/OpDetGeo.h"
-#include "larcorealg/Geometry/geo_vectors_utils_TVector.h" // geo::vect::toTVector3()
 
 // support libraries
 #include "cetlib_except/exception.h"
@@ -123,8 +122,7 @@ void PropagationTimeModel::propagationTime(
       int angle_bin = theta / fangle_bin_timing_vuv;
       getVUVTimes(arrival_time_dist, distance, angle_bin); // in ns
     } else {
-      getVISTimes(arrival_time_dist, geo::vect::toTVector3(x0),
-                  geo::vect::toTVector3(opDetCenter)); // in ns
+      getVISTimes(arrival_time_dist, x0, opDetCenter); // in ns
     }
   } else if (fGeoPropTimeOnly && !Reflected) {
     // Get VUV photons arrival time geometrically
@@ -308,8 +306,8 @@ void PropagationTimeModel::generateVUVParams(
 //......................................................................
 // VIS arrival times calculation functions
 void PropagationTimeModel::getVISTimes(std::vector<double> &arrivalTimes,
-                                       const TVector3 &scintPoint,
-                                       const TVector3 &opDetPoint) {
+                                       const geo::Point_t &scintPoint,
+                                       const geo::Point_t &opDetPoint) {
   // ***************************************************************************
   //     Calculation of earliest arrival times and corresponding unsmeared
   //     distribution
@@ -317,17 +315,17 @@ void PropagationTimeModel::getVISTimes(std::vector<double> &arrivalTimes,
 
   // set plane_depth for correct TPC:
   double plane_depth;
-  if (scintPoint[0] < 0)
+  if (scintPoint.X() < 0.)
     plane_depth = -fplane_depth;
   else
     plane_depth = fplane_depth;
 
   // calculate point of reflection for shortest path
-  TVector3 bounce_point(plane_depth, scintPoint[1], scintPoint[2]);
+  geo::Point_t bounce_point(plane_depth, scintPoint.Y(), scintPoint.Z());
 
   // calculate distance travelled by VUV light and by vis light
-  double VUVdist = (bounce_point - scintPoint).Mag();
-  double Visdist = (opDetPoint - bounce_point).Mag();
+  double VUVdist = std::sqrt((bounce_point - scintPoint).Mag2());
+  double Visdist = std::sqrt((opDetPoint - bounce_point).Mag2());
 
   // calculate times taken by VUV part of path
   int angle_bin_vuv = 0; // on-axis by definition
@@ -354,23 +352,22 @@ void PropagationTimeModel::getVISTimes(std::vector<double> &arrivalTimes,
     // find shortest time
     vuv_time = fVUV_min[angle_bin_vuv][index];
   }
-  // sum
   double fastest_time = vis_time + vuv_time;
 
   // calculate angle theta between bound_point and optical detector
-  double cosine_theta = std::abs(opDetPoint[0] - bounce_point[0]) / Visdist;
+  double cosine_theta = std::abs(opDetPoint.X() - bounce_point.X()) / Visdist;
   double theta = fast_acos(cosine_theta) * 180. / CLHEP::pi;
 
   // determine smearing parameters using interpolation of generated points:
   // 1). tau = exponential smearing factor, varies with distance and angle
   // 2). cutoff = largest smeared time allowed, preventing excessively large
   //     times caused by exponential distance to cathode
-  double distance_cathode_plane = std::abs(plane_depth - scintPoint[0]);
+  double distance_cathode_plane = std::abs(plane_depth - scintPoint.X());
   // angular bin
   size_t theta_bin = theta / fangle_bin_timing_vis;
   // radial distance from centre of TPC (y,z plane)
-  double r = std::hypot(scintPoint[1] - fcathode_centre[1],
-                        scintPoint[2] - fcathode_centre[2]);
+  double r = std::hypot(scintPoint.Y() - fcathode_centre.Y(),
+                        scintPoint.Z() - fcathode_centre.Z());
 
   // cut-off and tau
   // cut-off

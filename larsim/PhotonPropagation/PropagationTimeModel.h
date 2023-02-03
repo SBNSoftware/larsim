@@ -27,7 +27,6 @@ class HepRandomEngine;
 
 // ROOT headers
 #include "TF1.h"
-#include "TVector3.h"
 
 #include <array>
 #include <vector>
@@ -62,7 +61,7 @@ private:
 
   // reflected / visible light
   void getVISTimes(std::vector<double> &arrivalTimes,
-                   const TVector3 &scintPoint, const TVector3 &opDetPoint);
+                   const geo::Point_t &scintPoint, const geo::Point_t &opDetPoint);
 
   // utility functions
   static double finter_d(const double *x, const double *par);
@@ -79,7 +78,7 @@ private:
 
   // geometry properties
   double fplane_depth;
-  TVector3 fcathode_centre;
+  geo::Point_t fcathode_centre;
 
   // photodetector geometry properties
   std::vector<geo::Point_t> fOpDetCenter;
