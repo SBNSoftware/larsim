@@ -10,6 +10,8 @@ cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 
 find_package(cetmodules 3.24.00 REQUIRED)
 project(larsim VERSION 10.09.01 LANGUAGES CXX)
+# Explicitly set the project string
+set(${PROJECT_NAME}_CMAKE_PROJECT_VERSION_STRING "10.09.01__sbn2")
 
 include(CetCMakeEnv)
 cet_cmake_env()
